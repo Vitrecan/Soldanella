@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- The document head contains metadata and the title -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Mapping Input</title>
+  <!-- End head: Sets the character encoding, viewport settings, and page title -->
+</head>
+<body>
+  <!-- Container for our mapping input elements -->
+  <div id="mapping-container">
+    <!-- Label for the original word input; 'for' attribute connects to the input's id -->
+    <label for="original-word">Original Word:</label>
+    <!-- Text input where the user enters the word that will be mapped -->
+    <input type="text" id="original-word" placeholder="Enter original word">
+    
+    <!-- Label for the mapped word input -->
+    <label for="mapped-word">Mapped Word:</label>
+    <!-- Text input where the user enters the corresponding mapped word -->
+    <input type="text" id="mapped-word" placeholder="Enter mapped word">
+    
+    <!-- Button that the user clicks to add the mapping -->
+    <button id="add-mapping-btn">Add Mapping</button>
+  </div>
+
+  <script>
+    // Select the "Add Mapping" button by its unique ID
+    const addMappingBtn = document.getElementById('add-mapping-btn');
+
+    // Attach an event listener to run a function when the button is clicked
+    addMappingBtn.addEventListener('click', function() {
+      // Retrieve the current value from the "original-word" input and remove extra spaces
+      const originalWord = document.getElementById('original-word').value.trim();
+      // Retrieve the current value from the "mapped-word" input and remove extra spaces
+      const mappedWord = document.getElementById('mapped-word').value.trim();
+
+      // Log the mapping to the console to simulate saving the mapping
+      console.log("Mapping Added:", originalWord, "->", mappedWord);
+
+    });
+  </script>
+</body>
+</html>
