@@ -14,9 +14,15 @@ This module provides a minimal interface for mapping one word to another. It is 
 
 The page displays two text inputs:
 - **Original Word**: where the user enters the word they want to map.
-- **Mapped Word**: where the user enters the word that will be the mapping result.
+- **Mapped Word**: where the user enters the word that will serve as the mapping.
 
-A button labeled **"Add Mapping"** triggers JavaScript that:
-1. Retrieves the values from both input fields.
-2. Trims any extra whitespace.
-3. Logs the mapping to the console (simulating storage).
+There are two buttons:
+1. **Add Mapping**: When clicked, it validates the inputs, adds the mapping as an object to a global array, and logs the mapping.
+2. **Submit Mappings**: When clicked, it logs the entire array of mappings (simulating a submission).
+
+## Test Case
+
+1. Enter "test1" as the original word and "test2" as the mapped word, then click **Add Mapping**.
+2. Add another mapping (e.g., "hello" -> "world").
+3. Click **Submit Mappings**.
+4. Check the browser console for the logged mappings array.

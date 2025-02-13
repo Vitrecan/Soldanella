@@ -1,43 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- The document head contains metadata and the title -->
+  <!-- Document head: sets metadata and title -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Word Mapping Input</title>
-  <!-- End head: Sets the character encoding, viewport settings, and page title -->
+  <!-- End head -->
 </head>
 <body>
-  <!-- Container for our mapping input elements -->
+  <!-- Container for mapping inputs and buttons -->
   <div id="mapping-container">
-    <!-- Label for the original word input; 'for' attribute connects to the input's id -->
+    <!-- Label for the original word input -->
     <label for="original-word">Original Word:</label>
-    <!-- Text input where the user enters the word that will be mapped -->
+    <!-- Input field for the original word -->
     <input type="text" id="original-word" placeholder="Enter original word">
     
     <!-- Label for the mapped word input -->
     <label for="mapped-word">Mapped Word:</label>
-    <!-- Text input where the user enters the corresponding mapped word -->
+    <!-- Input field for the mapped word -->
     <input type="text" id="mapped-word" placeholder="Enter mapped word">
     
-    <!-- Button that the user clicks to add the mapping -->
+    <!-- Button to add a new mapping -->
     <button id="add-mapping-btn">Add Mapping</button>
+    <!-- Button to submit all stored mappings -->
+    <button id="submit-mappings-btn">Submit Mappings</button>
   </div>
 
   <script>
-    // Select the "Add Mapping" button by its unique ID
+    // Create an array to store each word mapping as an object (using DRY and YAGNI)
+    const mappings = [];
+
+    // Get the "Add Mapping" button element by its ID
     const addMappingBtn = document.getElementById('add-mapping-btn');
 
-    // Attach an event listener to run a function when the button is clicked
+    // Attach an event listener to the "Add Mapping" button to handle click events
     addMappingBtn.addEventListener('click', function() {
-      // Retrieve the current value from the "original-word" input and remove extra spaces
+      // Retrieve and trim the value from the original word input field
       const originalWord = document.getElementById('original-word').value.trim();
-      // Retrieve the current value from the "mapped-word" input and remove extra spaces
+      // Retrieve and trim the value from the mapped word input field
       const mappedWord = document.getElementById('mapped-word').value.trim();
 
-      // Log the mapping to the console to simulate saving the mapping
-      console.log("Mapping Added:", originalWord, "->", mappedWord);
+      // Check if both fields have been filled in
+      if(originalWord && mappedWord) {
+        // Add a new mapping object to the mappings array
+        mappings.push({ original: originalWord, mapped: mappedWord });
+        // Log the added mapping to the console for debugging purposes
+        console.log("Mapping Added:", originalWord, "->", mappedWord);
+      } else {
+        // Log a warning if either input field is empty
+        console.warn("Both fields must be filled to add a mapping.");
+      }
+    });
 
+    // Get the "Submit Mappings" button element by its ID
+    const submitMappingsBtn = document.getElementById('submit-mappings-btn');
+
+    // Attach an event listener to the "Submit Mappings" button to handle click events
+    submitMappingsBtn.addEventListener('click', function() {
+      // Log the complete mappings array to the console to simulate submission
+      console.log("Submitting the following mappings:", mappings);
+      // Future enhancement: Replace this log with an AJAX/fetch call to send mappings to a server.
     });
   </script>
 </body>
