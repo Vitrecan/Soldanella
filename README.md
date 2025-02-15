@@ -2,7 +2,7 @@
 
 # Word Mapping Input Module
 
-This module provides a minimal interface for mapping one word to another. It is the first atomic step in our larger word mapping application.
+This module provides a minimal interface for mapping one word to another.
 
 ## Files
 
