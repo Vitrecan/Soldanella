@@ -1,65 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Document head: sets metadata and title -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Word Mapping Input</title>
-  <!-- End head -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+
+    .feedback {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    .feedback.success {
+      background-color: #e6ffe6;
+      color: #006600;
+    }
+
+    .feedback.error {
+      background-color: #ffe6e6;
+      color: #990000;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin-right: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    button:disabled {
+      opacity: 0.8;
+      cursor: not-allowed;
+      background-color: #cccccc;
+    }
+
+    #search-container {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input {
+      padding: 0.5rem;
+      width: 100%;
+      max-width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    #search-results {
+      margin-top: 10px;
+      font-family: monospace;
+      white-space: pre-line;
+    }
+  </style>
 </head>
 <body>
-  <!-- Container for mapping inputs and buttons -->
-  <div id="mapping-container">
-    <!-- Label for the original word input -->
-    <label for="original-word">Original Word:</label>
-    <!-- Input field for the original word -->
-    <input type="text" id="original-word" placeholder="Enter original word">
+  <main>
+    <h1>Word Mapping Tool</h1>
     
-    <!-- Label for the mapped word input -->
-    <label for="mapped-word">Mapped Word:</label>
-    <!-- Input field for the mapped word -->
-    <input type="text" id="mapped-word" placeholder="Enter mapped word">
-    
-    <!-- Button to add a new mapping -->
-    <button id="add-mapping-btn">Add Mapping</button>
-    <!-- Button to submit all stored mappings -->
-    <button id="submit-mappings-btn">Submit Mappings</button>
-  </div>
+    <form id="mapping-form" aria-label="Word mapping form">
+      <div class="form-group">
+        <label for="original-word">Original Word:</label>
+        <input 
+          type="text" 
+          id="original-word" 
+          name="original-word"
+          maxlength="50"
+          pattern="[A-Za-z0-9\s\-]+"
+          required
+          aria-required="true"
+          placeholder="Enter original word">
+      </div>
+      
+      <div class="form-group">
+        <label for="mapped-word">Mapped Word:</label>
+        <input 
+          type="text" 
+          id="mapped-word"
+          name="mapped-word"
+          maxlength="50"
+          pattern="[A-Za-z0-9\s\-]+"
+          required
+          aria-required="true"
+          placeholder="Enter mapped word">
+      </div>
+      
+      <button type="submit" id="add-mapping-btn">Add Mapping</button>
+      <button type="button" id="submit-mappings-btn" disabled aria-disabled="true">Submit Mappings</button>
+      
+      <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+      <div id="error" class="feedback" role="alert" aria-live="assertive"></div>
+    </form>
+
+    <div id="search-container">
+      <div class="form-group">
+        <label for="search-input">Search Mapped Words:</label>
+        <input 
+          type="search" 
+          id="search-input" 
+          aria-label="Search through mapped words"
+          placeholder="Enter search term">
+      </div>
+      <div id="search-results" role="region" aria-live="polite"></div>
+    </div>
+  </main>
 
   <script>
-    // Create an array to store each word mapping as an object (using DRY and YAGNI)
-    const mappings = [];
-
-    // Get the "Add Mapping" button element by its ID
-    const addMappingBtn = document.getElementById('add-mapping-btn');
-
-    // Attach an event listener to the "Add Mapping" button to handle click events
-    addMappingBtn.addEventListener('click', function() {
-      // Retrieve and trim the value from the original word input field
-      const originalWord = document.getElementById('original-word').value.trim();
-      // Retrieve and trim the value from the mapped word input field
-      const mappedWord = document.getElementById('mapped-word').value.trim();
-
-      // Check if both fields have been filled in
-      if(originalWord && mappedWord) {
-        // Add a new mapping object to the mappings array
-        mappings.push({ original: originalWord, mapped: mappedWord });
-        // Log the added mapping to the console for debugging purposes
-        console.log("Mapping Added:", originalWord, "->", mappedWord);
-      } else {
-        // Log a warning if either input field is empty
-        console.warn("Both fields must be filled to add a mapping.");
+    class MappingStore {
+      constructor() {
+        this.mappings = [];
+        this.hasUnsubmittedMappings = false;
       }
-    });
 
-    // Get the "Submit Mappings" button element by its ID
-    const submitMappingsBtn = document.getElementById('submit-mappings-btn');
+      add(original, mapped) {
+        if (this.isDuplicate(original, mapped)) {
+          throw new Error("This mapping already exists.");
+        }
+        this.mappings.push({ original, mapped });
+        this.hasUnsubmittedMappings = true;
+      }
 
-    // Attach an event listener to the "Submit Mappings" button to handle click events
-    submitMappingsBtn.addEventListener('click', function() {
-      // Log the complete mappings array to the console to simulate submission
-      console.log("Submitting the following mappings:", mappings);
-      // Future enhancement: Replace this log with an AJAX/fetch call to send mappings to a server.
+      isDuplicate(original, mapped) {
+        return this.mappings.some(mapping => 
+          mapping.original.toLowerCase() === original.toLowerCase() &&
+          mapping.mapped.toLowerCase() === mapped.toLowerCase()
+        );
+      }
+
+      search(query) {
+        return this.mappings
+          .filter(mapping => mapping.mapped.toLowerCase().includes(query.toLowerCase()))
+          .map(mapping => `${mapping.original} → ${mapping.mapped}`);
+      }
+
+      markAsSubmitted() {
+        if (!this.hasUnsubmittedMappings) {
+          throw new Error("No mappings to submit.");
+        }
+        this.hasUnsubmittedMappings = false;
+        return this.mappings.length;
+      }
+
+      isEmpty() {
+        return !this.hasUnsubmittedMappings;
+      }
+    }
+
+    class FeedbackManager {
+      constructor(feedbackElement, errorElement) {
+        this.feedbackElement = feedbackElement;
+        this.errorElement = errorElement;
+      }
+
+      show(message, isError = false) {
+        const element = isError ? this.errorElement : this.feedbackElement;
+        element.textContent = message;
+        element.className = `feedback ${isError ? 'error' : 'success'}`;
+        
+        setTimeout(() => {
+          element.textContent = '';
+          element.className = 'feedback';
+        }, 3000);
+      }
+    }
+
+    class InputValidator {
+      static sanitize(input) {
+        return input.trim().replace(/[<>]/g, '');
+      }
+
+      static validate(original, mapped) {
+        if (!original || !mapped) {
+          throw new Error("Both fields must be filled.");
+        }
+      }
+    }
+
+    class FormManager {
+      constructor(form, store, feedback, submitButton) {
+        this.form = form;
+        this.store = store;
+        this.feedback = feedback;
+        this.submitButton = submitButton;
+        this.initialize();
+      }
+
+      initialize() {
+        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        this.submitButton.addEventListener('click', () => this.handleMappingsSubmit());
+        this.updateSubmitButtonState();
+      }
+
+      handleSubmit(event) {
+        event.preventDefault();
+        try {
+          const original = InputValidator.sanitize(this.form.elements['original-word'].value);
+          const mapped = InputValidator.sanitize(this.form.elements['mapped-word'].value);
+          
+          InputValidator.validate(original, mapped);
+          this.store.add(original, mapped);
+          
+          this.feedback.show(`Mapping "${original}" → "${mapped}" added successfully.`);
+          this.form.reset();
+          this.updateSubmitButtonState();
+          
+        } catch (error) {
+          this.feedback.show(error.message, true);
+        }
+      }
+
+      handleMappingsSubmit() {
+        try {
+          const count = this.store.markAsSubmitted();
+          this.feedback.show(`Successfully submitted ${count} mapping(s).`);
+          this.updateSubmitButtonState();
+        } catch (error) {
+          this.feedback.show(error.message, true);
+        }
+      }
+
+      updateSubmitButtonState() {
+        this.submitButton.disabled = this.store.isEmpty();
+        this.submitButton.setAttribute('aria-disabled', this.store.isEmpty());
+      }
+    }
+
+    class SearchManager {
+      constructor(input, resultsElement, store) {
+        this.input = input;
+        this.resultsElement = resultsElement;
+        this.store = store;
+        this.initialize();
+      }
+
+      initialize() {
+        this.input.addEventListener('input', () => this.performSearch());
+      }
+
+      performSearch() {
+        try {
+          const query = InputValidator.sanitize(this.input.value);
+          
+          if (!query) {
+            this.resultsElement.textContent = '';
+            return;
+          }
+
+          const results = this.store.search(query);
+          this.resultsElement.textContent = results.length > 0 
+            ? results.join('\n')
+            : 'No matches found.';
+            
+        } catch (error) {
+          this.resultsElement.textContent = 'An error occurred while searching.';
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const store = new MappingStore();
+      const feedback = new FeedbackManager(
+        document.getElementById('feedback'),
+        document.getElementById('error')
+      );
+      
+      const formManager = new FormManager(
+        document.getElementById('mapping-form'),
+        store,
+        feedback,
+        document.getElementById('submit-mappings-btn')
+      );
+      
+      const searchManager = new SearchManager(
+        document.getElementById('search-input'),
+        document.getElementById('search-results'),
+        store
+      );
     });
   </script>
 </body>
