@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Document head: sets metadata, title, and basic styling -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Word Mapping Input</title>
   <style>
+    /* Global styling for body */
     body {
       font-family: Arial, sans-serif;
       max-width: 800px;
       margin: 20px auto;
       padding: 0 20px;
     }
-
+    /* Styling for feedback messages */
     .feedback {
       margin-top: 10px;
       padding: 8px;
       border-radius: 4px;
     }
-
     .feedback.success {
       background-color: #e6ffe6;
       color: #006600;
     }
-
     .feedback.error {
       background-color: #ffe6e6;
       color: #990000;
     }
-
+    /* Styling for buttons */
     button {
       padding: 8px 16px;
       margin-right: 8px;
@@ -37,32 +37,27 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     button:hover {
       background-color: #45a049;
     }
-
     button:disabled {
       opacity: 0.8;
       cursor: not-allowed;
       background-color: #cccccc;
     }
-
+    /* Styling for search container */
     #search-container {
       margin-top: 20px;
       border-top: 1px solid #ccc;
       padding-top: 10px;
     }
-
     .form-group {
       margin-bottom: 1rem;
     }
-
     .form-group label {
       display: block;
       margin-bottom: 0.5rem;
     }
-
     .form-group input {
       padding: 0.5rem;
       width: 100%;
@@ -70,18 +65,20 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-
+    /* Styling for search results */
     #search-results {
       margin-top: 10px;
       font-family: monospace;
       white-space: pre-line;
     }
   </style>
+  <!-- End head -->
 </head>
 <body>
   <main>
     <h1>Word Mapping Tool</h1>
     
+    <!-- Mapping form with ARIA attributes for accessibility -->
     <form id="mapping-form" aria-label="Word mapping form">
       <div class="form-group">
         <label for="original-word">Original Word:</label>
@@ -109,13 +106,17 @@
           placeholder="Enter mapped word">
       </div>
       
+      <!-- Button to add a new mapping; submit type for form -->
       <button type="submit" id="add-mapping-btn">Add Mapping</button>
+      <!-- Button to submit all stored mappings (initially disabled) -->
       <button type="button" id="submit-mappings-btn" disabled aria-disabled="true">Submit Mappings</button>
       
+      <!-- Feedback and error messages -->
       <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
       <div id="error" class="feedback" role="alert" aria-live="assertive"></div>
     </form>
 
+    <!-- Search section for mapped words -->
     <div id="search-container">
       <div class="form-group">
         <label for="search-input">Search Mapped Words:</label>
@@ -130,6 +131,9 @@
   </main>
 
   <script>
+    /**
+     * Class to manage storage of mappings.
+     */
     class MappingStore {
       constructor() {
         this.mappings = [];
@@ -170,6 +174,9 @@
       }
     }
 
+    /**
+     * Class to manage feedback messages.
+     */
     class FeedbackManager {
       constructor(feedbackElement, errorElement) {
         this.feedbackElement = feedbackElement;
@@ -180,7 +187,6 @@
         const element = isError ? this.errorElement : this.feedbackElement;
         element.textContent = message;
         element.className = `feedback ${isError ? 'error' : 'success'}`;
-        
         setTimeout(() => {
           element.textContent = '';
           element.className = 'feedback';
@@ -188,8 +194,12 @@
       }
     }
 
+    /**
+     * Class for input validation and sanitization.
+     */
     class InputValidator {
       static sanitize(input) {
+        // Trim input and remove potentially harmful characters
         return input.trim().replace(/[<>]/g, '');
       }
 
@@ -200,6 +210,9 @@
       }
     }
 
+    /**
+     * Class to manage the mapping form.
+     */
     class FormManager {
       constructor(form, store, feedback, submitButton) {
         this.form = form;
@@ -220,14 +233,11 @@
         try {
           const original = InputValidator.sanitize(this.form.elements['original-word'].value);
           const mapped = InputValidator.sanitize(this.form.elements['mapped-word'].value);
-          
           InputValidator.validate(original, mapped);
           this.store.add(original, mapped);
-          
           this.feedback.show(`Mapping "${original}" → "${mapped}" added successfully.`);
           this.form.reset();
           this.updateSubmitButtonState();
-          
         } catch (error) {
           this.feedback.show(error.message, true);
         }
@@ -244,58 +254,62 @@
       }
 
       updateSubmitButtonState() {
-        this.submitButton.disabled = this.store.isEmpty();
-        this.submitButton.setAttribute('aria-disabled', this.store.isEmpty());
+        const disabled = this.store.isEmpty();
+        this.submitButton.disabled = disabled;
+        this.submitButton.setAttribute('aria-disabled', disabled);
       }
     }
 
+    /**
+     * Class to manage search functionality with debouncing.
+     */
     class SearchManager {
       constructor(input, resultsElement, store) {
         this.input = input;
         this.resultsElement = resultsElement;
         this.store = store;
+        this.debounceTimer = null;
         this.initialize();
       }
 
       initialize() {
-        this.input.addEventListener('input', () => this.performSearch());
+        this.input.addEventListener('input', () => this.debounceSearch());
+      }
+
+      debounceSearch() {
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => this.performSearch(), 300);
       }
 
       performSearch() {
         try {
           const query = InputValidator.sanitize(this.input.value);
-          
           if (!query) {
             this.resultsElement.textContent = '';
             return;
           }
-
           const results = this.store.search(query);
-          this.resultsElement.textContent = results.length > 0 
-            ? results.join('\n')
-            : 'No matches found.';
-            
+          this.resultsElement.textContent = results.length > 0 ? results.join('\n') : 'No matches found.';
         } catch (error) {
           this.resultsElement.textContent = 'An error occurred while searching.';
         }
       }
     }
 
+    // Initialize the application when the DOM content is loaded
     document.addEventListener('DOMContentLoaded', () => {
       const store = new MappingStore();
       const feedback = new FeedbackManager(
         document.getElementById('feedback'),
         document.getElementById('error')
       );
-      
-      const formManager = new FormManager(
+      new FormManager(
         document.getElementById('mapping-form'),
         store,
         feedback,
         document.getElementById('submit-mappings-btn')
       );
-      
-      const searchManager = new SearchManager(
+      new SearchManager(
         document.getElementById('search-input'),
         document.getElementById('search-results'),
         store
