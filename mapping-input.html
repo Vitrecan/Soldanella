@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Document head: sets metadata, title, and basic styling -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Enhanced Word Mapping Tool</title>
@@ -55,12 +56,6 @@
       background-color: #94a3b8;
     }
     
-    #search-container {
-      margin-top: 32px;
-      border-top: 2px solid #e5e7eb;
-      padding-top: 20px;
-    }
-    
     .form-group {
       margin-bottom: 1.5rem;
     }
@@ -85,6 +80,11 @@
       outline: none;
       border-color: #2563eb;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    #search-container {
+      margin-top: 20px;
+      /* Moved search container to top (will be repositioned in HTML) */
     }
     
     #search-results {
@@ -112,6 +112,20 @@
   <main>
     <h1>Word Mapping Tool <span class="mapping-count" id="mapping-count">0 mappings</span></h1>
     
+    <!-- Moved Search Container to the top -->
+    <div id="search-container">
+      <div class="form-group">
+        <label for="search-input">Search Mapped Words:</label>
+        <input 
+          type="search" 
+          id="search-input" 
+          aria-label="Search through mapped words"
+          placeholder="Search for mapped words...">
+      </div>
+      <div id="search-results" role="region" aria-live="polite"></div>
+    </div>
+    
+    <!-- Mapping form -->
     <form id="mapping-form" aria-label="Word mapping form">
       <div class="form-group">
         <label for="original-word">Original Word:</label>
@@ -146,63 +160,46 @@
       <div id="error" class="feedback" role="alert" aria-live="assertive"></div>
     </form>
 
-    <div id="search-container">
-      <div class="form-group">
-        <label for="search-input">Search Mapped Words:</label>
-        <input 
-          type="search" 
-          id="search-input" 
-          aria-label="Search through mapped words"
-          placeholder="Search for mapped words...">
-      </div>
-      <div id="search-results" role="region" aria-live="polite"></div>
-    </div>
+    <!-- List of mappings -->
+    <div id="mapping-list"></div>
   </main>
 
   <script>
     class MappingStore {
       constructor() {
-        // Load persisted data from localStorage on initialization
         const savedData = localStorage.getItem('wordMappings');
         this.mappings = savedData ? JSON.parse(savedData).mappings : [];
         this.hasUnsubmittedMappings = savedData ? JSON.parse(savedData).hasUnsubmitted : false;
         this.listeners = new Set();
       }
-
-      // Save to localStorage whenever mappings change (DRY principle)
       #saveToStorage() {
         localStorage.setItem('wordMappings', JSON.stringify({
           mappings: this.mappings,
           hasUnsubmitted: this.hasUnsubmittedMappings
         }));
       }
-
       subscribe(listener) {
         this.listeners.add(listener);
         return () => this.listeners.delete(listener);
       }
-
       notifyListeners() {
         this.listeners.forEach(listener => listener(this.mappings));
       }
-
       add(original, mapped) {
         if (this.isDuplicate(original, mapped)) {
           throw new Error("This mapping already exists.");
         }
         this.mappings.push({ original, mapped, timestamp: new Date() });
         this.hasUnsubmittedMappings = true;
-        this.#saveToStorage();  // Persist changes
+        this.#saveToStorage();
         this.notifyListeners();
       }
-
       isDuplicate(original, mapped) {
         return this.mappings.some(mapping => 
           mapping.original.toLowerCase() === original.toLowerCase() &&
           mapping.mapped.toLowerCase() === mapped.toLowerCase()
         );
       }
-
       search(query) {
         if (!query) return [];
         const searchTerms = query.toLowerCase().split(' ');
@@ -216,21 +213,18 @@
           .sort((a, b) => b.timestamp - a.timestamp)
           .map(mapping => `${mapping.original} → ${mapping.mapped}`);
       }
-
       markAsSubmitted() {
         if (!this.hasUnsubmittedMappings) {
           throw new Error("No mappings to submit.");
         }
         this.hasUnsubmittedMappings = false;
-        this.#saveToStorage();  // Persist state change
+        this.#saveToStorage();
         this.notifyListeners();
         return this.mappings.length;
       }
-
       isEmpty() {
         return !this.hasUnsubmittedMappings;
       }
-
       getCount() {
         return this.mappings.length;
       }
@@ -242,24 +236,18 @@
         this.errorElement = errorElement;
         this.timeouts = new Map();
       }
-
       show(message, isError = false) {
         const element = isError ? this.errorElement : this.feedbackElement;
-        
-        // Clear existing timeout for this element
         if (this.timeouts.has(element)) {
           clearTimeout(this.timeouts.get(element));
         }
-        
         element.textContent = message;
         element.className = `feedback ${isError ? 'error' : 'success'}`;
-        
         const timeout = setTimeout(() => {
           element.textContent = '';
           element.className = 'feedback';
           this.timeouts.delete(element);
         }, 3000);
-        
         this.timeouts.set(element, timeout);
       }
     }
@@ -268,7 +256,6 @@
       static sanitize(input) {
         return input.trim().replace(/[<>]/g, '');
       }
-
       static validate(original, mapped) {
         if (!original || !mapped) {
           throw new Error("Both fields must be filled.");
@@ -288,24 +275,20 @@
         this.countElement = document.getElementById('mapping-count');
         this.initialize();
       }
-
       initialize() {
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
         this.submitButton.addEventListener('click', () => this.handleMappingsSubmit());
         this.store.subscribe(() => this.updateUI());
         this.updateUI();
       }
-
       updateUI() {
         this.updateSubmitButtonState();
         this.updateMappingCount();
       }
-
       updateMappingCount() {
         const count = this.store.getCount();
         this.countElement.textContent = `${count} mapping${count !== 1 ? 's' : ''}`;
       }
-
       handleSubmit(event) {
         event.preventDefault();
         try {
@@ -319,7 +302,6 @@
           this.feedback.show(error.message, true);
         }
       }
-
       handleMappingsSubmit() {
         try {
           const count = this.store.markAsSubmitted();
@@ -328,7 +310,6 @@
           this.feedback.show(error.message, true);
         }
       }
-
       updateSubmitButtonState() {
         const disabled = this.store.isEmpty();
         this.submitButton.disabled = disabled;
@@ -344,32 +325,26 @@
         this.debounceTimer = null;
         this.initialize();
       }
-
       initialize() {
         this.input.addEventListener('input', () => this.debounceSearch());
         this.store.subscribe(() => this.performSearch());
       }
-
       debounceSearch() {
         clearTimeout(this.debounceTimer);
         this.debounceTimer = setTimeout(() => this.performSearch(), 300);
       }
-
       performSearch() {
         try {
           const query = InputValidator.sanitize(this.input.value);
           const results = this.store.search(query);
-          
           if (!query) {
             this.resultsElement.textContent = '';
             return;
           }
-          
           if (results.length === 0) {
             this.resultsElement.textContent = 'No matches found.';
             return;
           }
-          
           this.resultsElement.textContent = results.join('\n');
         } catch (error) {
           this.resultsElement.textContent = 'An error occurred while searching.';
