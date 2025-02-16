@@ -162,9 +162,19 @@
   <script>
     class MappingStore {
       constructor() {
-        this.mappings = [];
-        this.hasUnsubmittedMappings = false;
+        // Load persisted data from localStorage on initialization
+        const savedData = localStorage.getItem('wordMappings');
+        this.mappings = savedData ? JSON.parse(savedData).mappings : [];
+        this.hasUnsubmittedMappings = savedData ? JSON.parse(savedData).hasUnsubmitted : false;
         this.listeners = new Set();
+      }
+
+      // Save to localStorage whenever mappings change (DRY principle)
+      #saveToStorage() {
+        localStorage.setItem('wordMappings', JSON.stringify({
+          mappings: this.mappings,
+          hasUnsubmitted: this.hasUnsubmittedMappings
+        }));
       }
 
       subscribe(listener) {
@@ -182,6 +192,7 @@
         }
         this.mappings.push({ original, mapped, timestamp: new Date() });
         this.hasUnsubmittedMappings = true;
+        this.#saveToStorage();  // Persist changes
         this.notifyListeners();
       }
 
@@ -211,6 +222,7 @@
           throw new Error("No mappings to submit.");
         }
         this.hasUnsubmittedMappings = false;
+        this.#saveToStorage();  // Persist state change
         this.notifyListeners();
         return this.mappings.length;
       }
